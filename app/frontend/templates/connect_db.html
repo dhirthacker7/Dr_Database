@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Connect to Warehouse</h2>
+
+<p>
+  Provide connection details below.
+  Dr. Database will run <strong>SELECT-only</strong> queries.
+</p>
+
+<form method="post" action="/ui/connect/save">
+
+  <label>Database Type:</label><br>
+  <select name="db_type">
+    <option value="mssql" selected>SQL Server (MSSQL)</option>
+    <option value="postgres">Postgres</option>
+  </select>
+  <br><br>
+
+  <label>Host / Server:</label><br>
+  <input type="text" name="host" placeholder="e.g. DHIR or DHIR\\SQLEXPRESS" required><br><br>
+
+  <label>Port (optional):</label><br>
+  <input type="number" name="port" value="1433"><br><br>
+
+  <label>Database:</label><br>
+  <input type="text" name="database" required><br><br>
+
+  <label>Username:</label><br>
+  <input type="text" name="username" required><br><br>
+
+  <label>Password:</label><br>
+  <input type="password" name="password" required><br><br>
+
+  <button type="submit">Save Connection</button>
+</form>
+
+<hr>
+
+<!-- ONLY ONE dynamic banner -->
+{% if connection_ok %}
+    <p style="color: green; font-weight: bold;">
+        ✔ Connected to database: <strong>{{ db_name }}</strong>
+    </p>
+
+{% elif error %}
+    <p style="color: red; font-weight: bold;">
+        ✖ Connection error: {{ error }}
+    </p>
+
+{% else %}
+    <p style="color: red; font-weight: bold;">
+        ✖ No active database connection.
+    </p>
+{% endif %}
+
+{% if connection_ok %}
+<hr>
+
+<h3>Database Tools</h3>
+
+<p>Select a tool below to explore your connected warehouse.</p>
+
+<a href="/ui/tables">
+    <button style="margin: 5px; padding: 8px;">📋 View All Tables</button>
+</a>
+
+<a href="/ui/table/select">
+    <button style="margin: 5px; padding: 8px;">🔍 View Table Metadata</button>
+</a>
+
+<a href="/ui/dq">
+    <button style="margin: 5px; padding: 8px;">🧪 Data Quality Checks</button>
+</a>
+
+<a href="/ui/report">
+    <button style="margin: 5px; padding: 8px;">📄 Generate Report</button>
+</a>
+
+<a href="/ui/agents">
+    <button style="margin: 5px; padding: 8px;">🤖 AI Agents</button>
+</a>
+
+<hr>
+{% endif %}
+
+{% endblock %}
+

@@ -7,6 +7,8 @@ pydantic-settings
 jinja2
 python-dotenv
 markdown
+python-multipart 
+pyodbc
 
 langchain
 langchain-google-genai
