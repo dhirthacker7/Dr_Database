@@ -9,6 +9,7 @@ python-dotenv
 markdown
 python-multipart 
 pyodbc
+streamlit
 
 langchain
 langchain-google-genai

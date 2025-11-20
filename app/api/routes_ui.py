@@ -7,7 +7,9 @@ from sqlalchemy import create_engine, text
 from app.core.db_connection import get_db
 from app.db.models import DBConfig
 from app.api.routes_config import set_connection, ConnectionParams
-
+from app.dq.runner import run_dq_for_table, run_dq_for_all_tables
+from app.agents.controller import run_controller
+from app.graph.graph import run_langgraph_query
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/frontend/templates")
@@ -132,15 +134,108 @@ def ui_view_table(request: Request, table: str, db: Session = Depends(get_db)):
 
 @router.get("/ui/dq")
 def ui_dq(request: Request):
-    return templates.TemplateResponse("ui/dq_home.html", {"request": request})
+    return templates.TemplateResponse(
+        "ui/dq_home.html", 
+        {"request": request}
+    )
 
+@router.get("/ui/dq/select-table")
+def dq_select(request: Request, db: Session = Depends(get_db)):
+    from app.warehouse.client import get_warehouse_client
+
+    client = get_warehouse_client(db)
+    tables = client.list_tables()
+
+    return templates.TemplateResponse(
+        "ui/dq_select.html",
+        {"request": request, "tables": tables},
+    )
+
+
+@router.get("/ui/dq/run")
+def dq_run(request: Request, table: str, db: Session = Depends(get_db)):
+    results = run_dq_for_table(db, table)
+
+    return templates.TemplateResponse(
+        "ui/dq_result.html",
+        {
+            "request": request,
+            "table": table,
+            "results": results["results"],
+        },
+    )
 
 @router.get("/ui/report")
 def ui_report(request: Request):
-    return templates.TemplateResponse("ui/report.html", {"request": request})
+    return templates.TemplateResponse(
+        "ui/report.html", 
+        {"request": request}
+    )
 
 
 @router.get("/ui/agents")
 def ui_agents(request: Request):
-    return templates.TemplateResponse("ui/agents.html", {"request": request})
+    return templates.TemplateResponse(
+        "ui/agents.html", 
+        {"request": request}
+    )
+
+@router.get("/ui/agents")
+def ui_agents(request: Request, db: Session = Depends(get_db)):
+    from app.warehouse.client import get_warehouse_client
+
+    client = get_warehouse_client(db)
+    tables = client.list_tables()
+
+    return templates.TemplateResponse(
+        "ui/agents.html",
+        {
+            "request": request,
+            "result": None,
+            "tables": tables,
+        },
+    )
+
+@router.post("/ui/agents/query")
+def ui_agents_query(
+    request: Request,
+    query: str = Form(...),
+    table: list[str] | None = Form(None),
+    sql_text: str | None = Form(None),
+    db: Session = Depends(get_db),
+):
+    # Clean & normalize table list
+    if table:
+        table_list = [t.strip() for t in table if t and t.strip()]
+        table_list = table_list if table_list else None
+    else:
+        table_list = None
+
+    graph_result = run_langgraph_query(
+        question=query,
+        db=db,
+        tables=table_list,
+        sql_text=sql_text or None,
+    )
+
+    # Reload tables for dropdown
+    from app.warehouse.client import get_warehouse_client
+    client = get_warehouse_client(db)
+    tables = client.list_tables()
+
+    # Expose only what's needed to the template
+    result = {
+        "intent": graph_result.get("intent", "unknown"),
+        "answer": graph_result.get("answer", ""),
+        "debug": graph_result.get("debug", []),
+    }
+
+    return templates.TemplateResponse(
+        "ui/agents.html",
+        {
+            "request": request,
+            "result": result,
+            "tables": tables,
+        },
+    )
 

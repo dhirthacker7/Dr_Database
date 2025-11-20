@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, text
 
 from app.core.db_connection import get_db
 from app.db.models import DBConfig
+from app.warehouse.connection import create_engine_from_dict
 from app.utils.connection_builder import (
     build_postgres_conn_string,
     build_mssql_conn_string,
@@ -54,6 +55,24 @@ def test_db_connection(conn_str: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Connection failed: {e}")
 
+@router.post("/config/save-json")
+def save_connection_json(payload: dict):
+    from app.warehouse.connection import create_engine_from_dict
+
+    try:
+        engine = create_engine_from_dict(payload)
+        # store engine globally
+        from app.state import set_engine
+        set_engine(engine)
+
+        # test it
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+
+        return {"ok": True, "database": payload.get("database")}
+
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 @router.post("/connection")
 def set_connection(

@@ -1,15 +1,9 @@
-from sqlalchemy.orm import Session
-from app.warehouse.client import get_warehouse_client
+from app.warehouse.client import WarehouseClient
 
+def list_tables():
+    client = WarehouseClient()
+    return client.list_tables()
 
-def extract_table_metadata(db: Session, table_name: str):
-    client = get_warehouse_client(db)
-
-    cols = client.get_columns(table_name)
-    metadata = {
-        "table": table_name,
-        "columns": cols,
-        "column_count": len(cols),
-    }
-
-    return metadata
+def extract_table_metadata(table_name):
+    client = WarehouseClient()
+    return client.get_columns(table_name)
