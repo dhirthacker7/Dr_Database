@@ -5,7 +5,7 @@ from app.dq.rules import (
     RowCountCheck,
     SchemaCheck,
 )
-from app.warehouse.client import get_warehouse_client
+from app.warehouse.client import WarehouseClient
 
 
 ALL_RULES = [
@@ -17,7 +17,7 @@ ALL_RULES = [
 
 
 def run_dq_for_table(db, table: str):
-    client = get_warehouse_client(db)
+    client = WarehouseClient(db)
     results = []
 
     for rule in ALL_RULES:
@@ -35,7 +35,7 @@ def run_dq_for_table(db, table: str):
 
 
 def run_dq_for_all_tables(db):
-    client = get_warehouse_client(db)
+    client = WarehouseClient(db)
     tables = client.list_tables()
     output = {}
 

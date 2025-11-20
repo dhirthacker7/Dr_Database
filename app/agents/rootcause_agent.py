@@ -2,13 +2,13 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 
 from app.agents.base import get_llm
-from app.warehouse.client import get_warehouse_client
+from app.warehouse.client import WarehouseClient
 from app.dq.runner import run_dq_for_table
 
 
 def run_rootcause_agent(user_query: str, db: Session, tables: List[str] | None = None) -> str:
     llm = get_llm()
-    client = get_warehouse_client(db)
+    client = WarehouseClient(db)
 
     warehouse_tables = client.list_tables()
     metadata_context = {"warehouse_tables": warehouse_tables}

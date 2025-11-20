@@ -1,32 +1,47 @@
+# app/warehouse/client.py
+from typing import List, Dict
 from sqlalchemy import inspect, text
-from app.state import get_engine
+from sqlalchemy.exc import SQLAlchemyError
+
+from app.db.connection import get_engine
 
 
 class WarehouseClient:
     def __init__(self):
         self.engine = get_engine()
+
+    # ----------------------------------------
+    # List tables
+    # ----------------------------------------
+    def list_tables(self) -> List[str]:
         if not self.engine:
-            raise ValueError("No active database engine. Connect first.")
+            return []
+        insp = inspect(self.engine)
+        return insp.get_table_names()
 
-        self.insp = inspect(self.engine)
+    # ----------------------------------------
+    # Get columns for a specific table
+    # ----------------------------------------
+    def get_columns(self, table_name: str) -> List[Dict]:
+        if not self.engine:
+            return []
+        insp = inspect(self.engine)
+        return insp.get_columns(table_name)
 
-    def list_tables(self):
-        return self.insp.get_table_names()
+    # ----------------------------------------
+    # Run safe SQL (SELECT only)
+    # ----------------------------------------
+    def run_readonly_sql(self, sql: str):
+        if not self.engine:
+            raise ValueError("Engine not initialized.")
 
-    def get_columns(self, table_name):
-        return self.insp.get_columns(table_name)
+        sql = sql.strip().lower()
+        if not sql.startswith("select"):
+            raise ValueError("Read-only mode: Only SELECT statements allowed.")
 
-    def preview(self, table_name, limit=50):
-        with self.engine.connect() as conn:
-            result = conn.execute(text(f"SELECT TOP {limit} * FROM {table_name}"))
-            rows = result.fetchall()
-        return rows
-
-    def run_sql(self, sql):
         with self.engine.connect() as conn:
             result = conn.execute(text(sql))
-            try:
-                rows = result.fetchall()
-                return rows
-            except:
-                return None
+            rows = result.fetchall()
+            cols = result.keys()
+
+        return {"columns": cols, "rows": rows}

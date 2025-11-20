@@ -6,7 +6,6 @@ from app.api import (
     routes_config,
     routes_run,
     routes_reports,
-    routes_ui,
     routes_agents,
 )
 
@@ -43,5 +42,4 @@ def root():
 app.include_router(routes_config.router, prefix="/config", tags=["config"])
 app.include_router(routes_run.router, prefix="/run", tags=["run"])
 app.include_router(routes_reports.router, prefix="/reports", tags=["reports"])
-app.include_router(routes_ui.router, prefix="/ui", tags=["ui"])
 app.include_router(routes_agents.router, prefix="/agents", tags=["agents"])
